@@ -276,7 +276,7 @@ export default function AdminPanel() {
                 value={adminId}
                 onChange={e => setAdminId(e.target.value)}
                 className="w-full px-5 py-4 bg-stone-50 border-2 border-stone-200 focus:border-editorial-text outline-none text-sm transition-all font-bold"
-                placeholder="Ex: 1502361149"
+                placeholder="ADMIN ID"
                 required
               />
             </div>
