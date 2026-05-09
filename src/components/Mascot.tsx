@@ -173,7 +173,7 @@ function Mascot({ state, className, lookAt }: MascotProps) {
             />
             
             <g className="face">
-              <g className="cap" opacity="0" transform="translate(24, -38) rotate(25)">
+              <g className="cap" opacity="0" transform="translate(1, -38) rotate(25)">
                 <path 
                   d="M 50 30 Q 75 42 100 30 Q 105 34 100 38 Q 75 46 50 38 Q 45 34 50 30 
                      M 60 35 L 70 -10 Q 85 -10 95 10 L 85 35" 
