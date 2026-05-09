@@ -409,7 +409,7 @@ export default function StudentPortal() {
                 <h2 className="text-6xl font-serif font-black italic mb-8 tracking-tighter">Transmission Complete</h2>
                 <div className="w-48 h-48 mx-auto mb-8"><Mascot state="excited" /></div>
                 <p className="text-xl font-medium text-stone-600 mb-12 px-10">
-                  আপনার আবেদনটি সফলভাবে গৃহীত হয়েছে। আমরা খুব শীঘ্রই আপনার ডাটা এনালিসিস করে ফলাফলী জানাবো।
+                  আপনার আবেদনটি সফলভাবে গৃহীত হয়েছে। আমরা খুব শীঘ্রই আপনার ডাটা এনালিসিস করে ফলাফল জানাবো।
                 </p>
                 <button
                   onClick={() => window.location.reload()}
@@ -427,7 +427,7 @@ export default function StudentPortal() {
         <div className="flex flex-wrap gap-10 items-center justify-center md:justify-start">
           <div className="text-[11px] font-black uppercase tracking-widest flex items-center gap-3">
              <Clock className="w-4 h-4 text-editorial-accent-orange" />
-             Ends In: <span className="text-editorial-accent-orange">12d 04h 22m</span>
+             Ends In: <span className="text-editorial-accent-orange">06H 50M 00S</span>
           </div>
           <div className="h-6 w-px bg-editorial-text opacity-20 hidden md:block" />
           <div className="flex gap-4">
