@@ -1,340 +1,148 @@
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { ChangeEvent, DragEvent, FormEvent, ReactNode, useEffect, useMemo, useState } from 'react';
 import {
-  ArrowDownToLine,
-  ArrowUpRight,
-  Check,
-  ChevronDown,
-  Download,
-  Filter,
-  Globe2,
-  Heart,
-  Menu,
-  Monitor,
-  Plus,
-  Search,
-  SlidersHorizontal,
-  Sparkles,
-  Upload,
-  X,
-  Zap,
+  ArrowDownToLine, ArrowUpRight, Check, ChevronDown, CloudUpload, Download,
+  FileArchive, FileCheck2, Filter, Heart, Menu, MonitorDown, Plus, Search,
+  Sparkles, Star, Upload, X, Zap,
 } from 'lucide-react';
 
 type Category = 'Aurora' | 'Minimal' | 'Nature' | 'Abstract' | 'Retro';
+type Variant = 'lime' | 'blue' | 'coral' | 'violet' | 'mint';
 type SortMode = 'newest' | 'popular' | 'name';
 
 type Theme = {
-  id: string;
-  title: string;
-  category: Category;
-  description: string;
-  creator: string;
-  downloads: number;
-  added: string;
-  tags: string[];
-  visual: string;
-  imageUrl?: string;
-  fileUrl?: string;
-  featured?: boolean;
+  id: string; title: string; category: Category; description: string; creator: string;
+  downloads: number; added: string; tags: string[]; variant: Variant;
+  fileName?: string; fileUrl?: string; fileBlobUrl?: string; featured?: boolean;
 };
 
 type Toast = { title: string; message: string } | null;
 
 const categoryMeta: Record<Category, { label: string; color: string }> = {
-  Aurora: { label: 'অরোরা', color: '#D7FF4F' },
-  Minimal: { label: 'মিনিমাল', color: '#F1E9D8' },
-  Nature: { label: 'প্রকৃতি', color: '#A7D3A6' },
-  Abstract: { label: 'অ্যাবস্ট্রাক্ট', color: '#D4B4FF' },
-  Retro: { label: 'রেট্রো', color: '#FFB28D' },
+  Aurora: { label: 'অরোরা', color: '#9dff47' }, Minimal: { label: 'মিনিমাল', color: '#4c7cff' },
+  Nature: { label: 'প্রকৃতি', color: '#65cfa6' }, Abstract: { label: 'অ্যাবস্ট্রাক্ট', color: '#b58aff' }, Retro: { label: 'রেট্রো', color: '#ff8f72' },
 };
 
-const defaultThemes: Theme[] = [
-  {
-    id: 'greenhouse-after-dark',
-    title: 'Greenhouse After Dark',
-    category: 'Nature',
-    description: 'ঘন পাতার ছায়া, নরম আলো আর গভীর রাত—focus mode-এর জন্য তৈরি।',
-    creator: 'Nila Rahman',
-    downloads: 2840,
-    added: '২ দিন আগে',
-    tags: ['Focus', 'Dark', '4K'],
-    visual: 'radial-gradient(circle at 65% 18%, rgba(215,255,79,.42), transparent 20%), radial-gradient(circle at 25% 100%, rgba(52,92,72,.95), transparent 46%), linear-gradient(135deg, #19251f 0%, #0d110f 68%)',
-    featured: true,
-  },
-  {
-    id: 'signal-bloom',
-    title: 'Signal Bloom',
-    category: 'Aurora',
-    description: 'একটি ধীর, উজ্জ্বল horizon—রাত জাগা desktop-এর জন্য।',
-    creator: 'Ari Studio',
-    downloads: 1940,
-    added: '৫ দিন আগে',
-    tags: ['Calm', 'Green', 'Wide'],
-    visual: 'radial-gradient(ellipse at 72% 35%, rgba(216,255,79,.92) 0%, rgba(145,177,68,.48) 16%, transparent 38%), linear-gradient(126deg, #111612 3%, #273628 58%, #0c100e 100%)',
-  },
-  {
-    id: 'quiet-terminal',
-    title: 'Quiet Terminal',
-    category: 'Minimal',
-    description: 'শুধু প্রয়োজনটুকু—একটি clean, low-noise workspace।',
-    creator: 'Bashful Objects',
-    downloads: 1268,
-    added: '১ সপ্তাহ আগে',
-    tags: ['Mono', 'Work', 'Clean'],
-    visual: 'linear-gradient(150deg, #e8e3d7 0%, #f5f1e6 44%, #9da997 44%, #687463 100%)',
-  },
-  {
-    id: 'clay-orbit',
-    title: 'Clay Orbit',
-    category: 'Abstract',
-    description: 'উষ্ণ clay tone আর soft geometry—screen-এ একটু বেশি মানবিকতা।',
-    creator: 'Momo Lab',
-    downloads: 982,
-    added: '২ সপ্তাহ আগে',
-    tags: ['Warm', 'Shape', 'Soft'],
-    visual: 'radial-gradient(circle at 60% 42%, #f8d3a6 0 12%, transparent 13%), radial-gradient(ellipse at 62% 42%, transparent 0 22%, #b96c54 23% 31%, transparent 32%), linear-gradient(135deg, #4a2a27 0%, #a86551 58%, #e6b27d 100%)',
-  },
-  {
-    id: 'night-garden',
-    title: 'Night Garden',
-    category: 'Nature',
-    description: 'বৃষ্টির পরের গাছপালা, একটু নীল, আর প্রচুর breathing room।',
-    creator: 'Jui Karim',
-    downloads: 764,
-    added: '৩ সপ্তাহ আগে',
-    tags: ['Blue', 'Rain', 'Slow'],
-    visual: 'radial-gradient(circle at 38% 24%, rgba(123,204,176,.46), transparent 17%), radial-gradient(circle at 75% 75%, rgba(50,93,109,.65), transparent 40%), linear-gradient(145deg, #172b32, #0d1820 62%, #263c3c)',
-  },
-  {
-    id: 'pixel-sunday',
-    title: 'Pixel Sunday',
-    category: 'Retro',
-    description: 'পুরনো game room-এর উষ্ণতা, নতুন desktop-এর sharpness।',
-    creator: 'Studio 1997',
-    downloads: 611,
-    added: '১ মাস আগে',
-    tags: ['Fun', 'CRT', 'Color'],
-    visual: 'linear-gradient(90deg, rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(rgba(255,255,255,.12) 1px, transparent 1px), linear-gradient(140deg, #261a46, #7f367c 48%, #e27b4f 100%)',
-  },
+const initialThemes: Theme[] = [
+  { id: 'greenhouse', title: 'Greenhouse After Dark', category: 'Nature', description: 'ঘন পাতার ছায়া, নরম আলো আর গভীর রাত—focus mode-এর জন্য।', creator: 'Nila Rahman', downloads: 2840, added: '২ দিন আগে', tags: ['Focus', 'Dark', '4K'], variant: 'mint', featured: true },
+  { id: 'signal-bloom', title: 'Signal Bloom', category: 'Aurora', description: 'একটি ধীর, উজ্জ্বল horizon—রাত জাগা desktop-এর জন্য।', creator: 'Ari Studio', downloads: 1940, added: '৫ দিন আগে', tags: ['Calm', 'Wide', 'Green'], variant: 'lime' },
+  { id: 'quiet-terminal', title: 'Quiet Terminal', category: 'Minimal', description: 'শুধু প্রয়োজনটুকু—একটি clean, low-noise workspace।', creator: 'Bashful Objects', downloads: 1268, added: '১ সপ্তাহ আগে', tags: ['Mono', 'Work', 'Clean'], variant: 'blue' },
+  { id: 'clay-orbit', title: 'Clay Orbit', category: 'Abstract', description: 'উষ্ণ clay tone আর soft geometry—screen-এ একটু বেশি মানবিকতা।', creator: 'Momo Lab', downloads: 982, added: '২ সপ্তাহ আগে', tags: ['Warm', 'Shape', 'Soft'], variant: 'coral' },
+  { id: 'night-garden', title: 'Night Garden', category: 'Nature', description: 'বৃষ্টির পরের গাছপালা, একটু নীল, আর প্রচুর breathing room।', creator: 'Jui Karim', downloads: 764, added: '৩ সপ্তাহ আগে', tags: ['Blue', 'Rain', 'Slow'], variant: 'violet' },
+  { id: 'pixel-sunday', title: 'Pixel Sunday', category: 'Retro', description: 'পুরনো game room-এর উষ্ণতা, নতুন desktop-এর sharpness।', creator: 'Studio 1997', downloads: 611, added: '১ মাস আগে', tags: ['Fun', 'CRT', 'Color'], variant: 'coral' },
 ];
 
 const categories: Array<'সব' | Category> = ['সব', 'Aurora', 'Minimal', 'Nature', 'Abstract', 'Retro'];
+const acceptedTypes = '.zip,.rar,.7z,.theme,.themepack';
 
 function App() {
-  const [themes, setThemes] = useState<Theme[]>(defaultThemes);
+  const [themes, setThemes] = useState(initialThemes);
   const [category, setCategory] = useState<'সব' | Category>('সব');
   const [search, setSearch] = useState('');
   const [sort, setSort] = useState<SortMode>('newest');
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
+  const [favorites, setFavorites] = useState<Set<string>>(new Set());
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
   const [toast, setToast] = useState<Toast>(null);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
+  useEffect(() => { if (!toast) return; const id = window.setTimeout(() => setToast(null), 3600); return () => window.clearTimeout(id); }, [toast]);
   useEffect(() => {
-    if (!toast) return;
-    const timeout = window.setTimeout(() => setToast(null), 3400);
-    return () => window.clearTimeout(timeout);
-  }, [toast]);
-
-  useEffect(() => {
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        setSelectedTheme(null);
-        setIsUploadOpen(false);
-        setIsFilterOpen(false);
-      }
-    };
-    window.addEventListener('keydown', onKeyDown);
-    return () => window.removeEventListener('keydown', onKeyDown);
+    const close = (event: KeyboardEvent) => { if (event.key === 'Escape') { setSelectedTheme(null); setUploadOpen(false); setFilterOpen(false); } };
+    window.addEventListener('keydown', close); return () => window.removeEventListener('keydown', close);
   }, []);
 
   const filteredThemes = useMemo(() => {
     const query = search.trim().toLowerCase();
-    const next = themes.filter((theme) => {
+    const filtered = themes.filter((theme) => {
       const matchesCategory = category === 'সব' || theme.category === category;
-      const searchable = [theme.title, theme.description, theme.creator, theme.category, ...theme.tags].join(' ').toLowerCase();
-      return matchesCategory && (!query || searchable.includes(query));
+      const haystack = [theme.title, theme.description, theme.creator, theme.category, theme.fileName || '', ...theme.tags].join(' ').toLowerCase();
+      return matchesCategory && (!query || haystack.includes(query));
     });
-
-    return [...next].sort((a, b) => {
-      if (sort === 'popular') return b.downloads - a.downloads;
-      if (sort === 'name') return a.title.localeCompare(b.title);
-      return themes.findIndex((theme) => theme.id === a.id) - themes.findIndex((theme) => theme.id === b.id);
-    });
-  }, [category, search, sort, themes]);
+    return filtered.sort((a, b) => sort === 'popular' ? b.downloads - a.downloads : sort === 'name' ? a.title.localeCompare(b.title) : themes.indexOf(a) - themes.indexOf(b));
+  }, [themes, category, search, sort]);
 
   const showToast = (title: string, message: string) => setToast({ title, message });
-
-  const toggleFavorite = (id: string) => {
-    setFavoriteIds((current) => {
-      const next = new Set(current);
-      const added = !next.has(id);
-      if (added) next.add(id);
-      else next.delete(id);
-      const theme = themes.find((item) => item.id === id);
-      if (theme) showToast(added ? 'সংরক্ষণ করা হয়েছে' : 'সংরক্ষণ থেকে সরানো হয়েছে', added ? `${theme.title} আপনার collection-এ আছে।` : `${theme.title} collection থেকে সরানো হয়েছে।`);
-      return next;
-    });
-  };
-
+  const toggleFavorite = (id: string) => setFavorites((current) => { const next = new Set(current); const added = !next.has(id); added ? next.add(id) : next.delete(id); const theme = themes.find((item) => item.id === id); if (theme) showToast(added ? 'Collection-এ রাখা হয়েছে' : 'Collection থেকে সরানো হয়েছে', theme.title); return next; });
   const downloadTheme = (theme: Theme) => {
     setThemes((current) => current.map((item) => item.id === theme.id ? { ...item, downloads: item.downloads + 1 } : item));
-    const fileContents = `GreenHorizon theme\n${theme.title}\nCategory: ${theme.category}\nCreator: ${theme.creator}\n\nApply this theme pack from GreenHorizon.`;
-    const href = theme.fileUrl || `data:text/plain;charset=utf-8,${encodeURIComponent(fileContents)}`;
+    const fallback = `GreenHorizon theme pack\n${theme.title}\nCreator: ${theme.creator}`;
     const link = document.createElement('a');
-    link.href = href;
-    link.download = `${theme.title.toLowerCase().replace(/[^a-z0-9]+/g, '-') || 'greenhorizon-theme'}.txt`;
-    link.target = '_blank';
-    link.rel = 'noreferrer';
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    showToast('ডাউনলোড শুরু হয়েছে', `${theme.title} আপনার desktop-এর জন্য প্রস্তুত।`);
+    link.href = theme.fileBlobUrl || theme.fileUrl || `data:text/plain;charset=utf-8,${encodeURIComponent(fallback)}`;
+    link.download = theme.fileName || `${theme.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}.txt`;
+    link.target = '_blank'; link.rel = 'noreferrer'; document.body.appendChild(link); link.click(); link.remove();
+    showToast('ডাউনলোড শুরু হয়েছে', theme.fileName || `${theme.title} theme pack`);
+  };
+  const publishTheme = (draft: Omit<Theme, 'id' | 'downloads' | 'added'>) => {
+    setThemes((current) => [{ ...draft, id: `upload-${Date.now()}`, downloads: 0, added: 'এইমাত্র' }, ...current]);
+    setUploadOpen(false); showToast('থিমপ্যাক লাইভ হয়েছে', `${draft.fileName || draft.title} এই session-এর gallery-তে যোগ হয়েছে`);
   };
 
-  const scrollToBrowse = () => document.getElementById('browse')?.scrollIntoView({ behavior: 'smooth' });
+  return <div className="app-shell" id="top">
+    <header className="site-header">
+      <a className="brand" href="#top"><img src="/logo.svg" alt="" className="brand-mark" /><span>green<span>horizon</span></span></a>
+      <nav className={`main-nav ${menuOpen ? 'open' : ''}`}><a href="#archive" onClick={() => setMenuOpen(false)}>থিমপ্যাক গ্যালারি</a><a href="#process" onClick={() => setMenuOpen(false)}>কীভাবে কাজ করে</a><button className="nav-upload" onClick={() => { setUploadOpen(true); setMenuOpen(false); }}><Plus size={15} /> থিমপ্যাক আপলোড</button></nav>
+      <div className="header-right"><span className="live-badge"><i /> CURATED DAILY</span><button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="মেনু"><Menu size={19} /></button></div>
+    </header>
 
-  return (
-    <div className="app-shell">
-      <header className="site-header">
-        <a className="brand" href="#top" aria-label="GreenHorizon home">
-          <img src="/logo.svg" alt="" className="brand-mark" />
-          <span className="brand-name">green<span>horizon</span></span>
-        </a>
-        <nav className={`main-nav ${mobileMenuOpen ? 'is-open' : ''}`} aria-label="প্রধান নেভিগেশন">
-          <a href="#browse" onClick={() => setMobileMenuOpen(false)}>থিম গ্যালারি</a>
-          <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)}>কীভাবে কাজ করে</a>
-          <button className="nav-upload" onClick={() => { setIsUploadOpen(true); setMobileMenuOpen(false); }}><Plus size={15} /> থিম আপলোড করুন</button>
-        </nav>
-        <div className="header-actions">
-          <span className="online-status"><i /> লাইভ গ্যালারি</span>
-          <button className="icon-button menu-button" aria-label="মেনু" onClick={() => setMobileMenuOpen((open) => !open)}><Menu size={19} /></button>
-        </div>
-      </header>
+    <main>
+      <section className="hero">
+        <div className="hero-copy"><div className="eyebrow"><span className="spark-dot" /> A DESKTOP THEME CLUB <span>· 2026</span></div><h1>Make your screen feel <em>like yours.</em></h1><p>সুন্দর theme pack খুঁজে নিন, সরাসরি upload করুন, আর আপনার desktop-কে প্রতিদিনের mood-এ বদলে দিন।</p><div className="hero-actions"><button className="button primary" onClick={() => document.getElementById('archive')?.scrollIntoView({ behavior: 'smooth' })}>থিমপ্যাক খুঁজুন <ArrowUpRight size={17} /></button><button className="button outline" onClick={() => setUploadOpen(true)}><CloudUpload size={16} /> সরাসরি আপলোড করুন</button></div><div className="hero-proof"><span><Star size={14} fill="currentColor" /> 4.9/5 community mood</span><span><FileCheck2 size={14} /> .zip থেকে .theme</span></div></div>
+        <HeroIllustration />
+        <div className="hero-stats"><div><strong>24<span>+</span></strong><small>curated packs</small></div><div><strong>06</strong><small>visual moods</small></div><div><strong>100<span>%</span></strong><small>free downloads</small></div><p>আপনার screen<br />আপনার rules.</p></div>
+      </section>
 
-      <main id="top">
-        <section className="hero-section">
-          <div className="hero-copy">
-            <p className="eyebrow"><span className="eyebrow-dot" /> CURATED PC THEMES <span className="eyebrow-year">· 2026</span></p>
-            <h1>আপনার desktop-এর <em>নতুন দিগন্ত।</em></h1>
-            <p className="hero-description">শান্ত, সুন্দর এবং মনোযোগ ধরে রাখার মতো PC themes—যেখানে প্রতিটি pixel নিজের একটা mood তৈরি করে।</p>
-            <div className="hero-actions">
-              <button className="button button-primary" onClick={scrollToBrowse}>থিম ঘুরে দেখুন <ArrowUpRight size={17} /></button>
-              <button className="button button-ghost" onClick={() => setIsUploadOpen(true)}>আমি তৈরি করি <Upload size={16} /></button>
-            </div>
-            <div className="hero-note"><Sparkles size={14} /> প্রতি সপ্তাহে নতুন curated drop</div>
-          </div>
-          <div className="hero-art" aria-label="GreenHorizon abstract aurora preview" role="img">
-            <div className="hero-art-overlay" />
-            <div className="hero-art-label"><span>GH / 001</span><span>LIVE PREVIEW</span></div>
-            <div className="hero-art-caption"><span className="caption-line" /> <span>Signal in the quiet</span></div>
-          </div>
-          <div className="hero-bottom-line">
-            <div className="hero-stat"><strong>24<span>+</span></strong><span>curated themes</span></div>
-            <div className="hero-stat"><strong>06</strong><span>distinct moods</span></div>
-            <div className="hero-stat"><strong>100<span>%</span></strong><span>free to download</span></div>
-            <p>একবার খুঁজে নিন। প্রতিদিন ব্যবহার করুন।</p>
-          </div>
-        </section>
+      <section className="mood-strip"><div className="strip-label"><Sparkles size={16} /> PICK YOUR MOOD</div><div className="mood-list"><span>slow mornings</span><span>deep focus</span><span>night shift</span><span>soft chaos</span><span>pixel joy</span></div><ArrowUpRight className="strip-arrow" size={18} /></section>
 
-        <section className="featured-section" aria-labelledby="featured-title">
-          <div className="section-intro">
-            <div>
-              <p className="section-kicker">EDITOR'S PICK / 01</p>
-              <h2 id="featured-title">এই সপ্তাহের <span>নির্বাচন।</span></h2>
-            </div>
-            <p>কম distraction, বেশি intention—এই mood-টা আপনার জন্য।</p>
-          </div>
-          <div className="featured-card" onClick={() => setSelectedTheme(themes[0])} role="button" tabIndex={0} onKeyDown={(event) => { if (event.key === 'Enter') setSelectedTheme(themes[0]); }}>
-            <div className="featured-visual" style={{ background: themes[0].visual }}>
-              <div className="featured-visual-label"><span>GH / NATURE</span><span>4K · 16:9</span></div>
-              <div className="featured-orbit orbit-one" /><div className="featured-orbit orbit-two" />
-              <div className="featured-sun" />
-              <div className="featured-scanline" />
-            </div>
-            <div className="featured-info">
-              <div className="card-meta-row"><span className="theme-category">{categoryMeta[themes[0].category].label}</span><span>{themes[0].added}</span></div>
-              <h3>{themes[0].title}</h3>
-              <p>{themes[0].description}</p>
-              <div className="featured-footer"><span>by <strong>{themes[0].creator}</strong></span><span>{formatDownloads(themes[0].downloads)} downloads <ArrowUpRight size={15} /></span></div>
-            </div>
-            <button className="card-open" aria-label={`${themes[0].title} preview খুলুন`}><ArrowUpRight size={18} /></button>
-          </div>
-        </section>
+      <section className="archive" id="archive"><div className="section-top"><div><p className="kicker">THE LIVING ARCHIVE / {String(filteredThemes.length).padStart(2, '0')}</p><h2>A better backdrop<br /><em>for every day.</em></h2></div><p>প্রতিটি pack hand-picked, preview-ready এবং আপনার setup-এর জন্য আলাদা করে ভাবা।</p></div>
+        <div className="toolbar"><div className="search-box"><Search size={17} /><input value={search} onChange={(e) => setSearch(e.target.value)} placeholder="নাম, mood বা creator খুঁজুন" aria-label="থিমপ্যাক খুঁজুন" />{search && <button onClick={() => setSearch('')} aria-label="সার্চ মুছুন"><X size={14} /></button>}</div><div className="toolbar-actions"><button className={`filter-button ${filterOpen ? 'active' : ''}`} onClick={() => setFilterOpen((v) => !v)}><Filter size={15} /> Filter {category !== 'সব' && <b>1</b>}</button><label className="sort"><span>সাজান</span><select value={sort} onChange={(e) => setSort(e.target.value as SortMode)}><option value="newest">নতুন আগে</option><option value="popular">জনপ্রিয় আগে</option><option value="name">নাম অনুযায়ী</option></select><ChevronDown size={14} /></label></div></div>
+        {filterOpen && <div className="mobile-filter"><CategoryPills category={category} setCategory={setCategory} themes={themes} /></div>}
+        <div className="archive-meta"><div className="desktop-filter"><CategoryPills category={category} setCategory={setCategory} themes={themes} /></div><span>{filteredThemes.length}টি theme pack</span></div>
+        {filteredThemes.length ? <div className="theme-grid">{filteredThemes.map((theme, index) => <ThemeCard key={theme.id} theme={theme} index={index} favorite={favorites.has(theme.id)} onFavorite={() => toggleFavorite(theme.id)} onPreview={() => setSelectedTheme(theme)} onDownload={() => downloadTheme(theme)} />)}</div> : <div className="empty"><Search size={24} /><h3>এই mood-এ কিছু পাওয়া যায়নি</h3><p>অন্য keyword বা category দিয়ে চেষ্টা করুন।</p><button className="button outline" onClick={() => { setSearch(''); setCategory('সব'); }}>সব pack দেখুন</button></div>}
+      </section>
 
-        <section className="browse-section" id="browse" aria-labelledby="browse-title">
-          <div className="browse-heading">
-            <div>
-              <p className="section-kicker">THE ARCHIVE / {String(filteredThemes.length).padStart(2, '0')}</p>
-              <h2 id="browse-title">আপনার <span>mood</span> খুঁজে নিন।</h2>
-            </div>
-            <p className="browse-aside">প্রতিটি থিম hand-picked। কারণ আপনার desktop-ও একটা space।</p>
-          </div>
+      <section className="process" id="process"><div className="section-top"><div><p className="kicker">FROM IDEA TO DESKTOP</p><h2>আপনার pack.<br /><em>আপনার pace.</em></h2></div><p>কোনো complicated setup নয়। তিনটি ছোট step, তারপর আপনার screen একদম অন্যরকম।</p></div><div className="process-grid"><ProcessStep number="01" icon={<Search size={19} />} title="একটি mood বাছুন" text="Curated gallery থেকে আপনার vibe-এর pack খুঁজুন।" /><ProcessStep number="02" icon={<Download size={19} />} title="এক ক্লিকে download" text="Theme pack সরাসরি আপনার Downloads-এ চলে যাবে।" /><ProcessStep number="03" icon={<Upload size={19} />} title="নিজেরটা upload" text=".zip, .rar, .7z বা .theme pack সরাসরি শেয়ার করুন।" /></div></section>
+    </main>
 
-          <div className="browse-toolbar">
-            <div className="search-wrap"><Search size={17} /><input value={search} onChange={(event) => setSearch(event.target.value)} placeholder="থিম, mood বা creator খুঁজুন..." aria-label="থিম খুঁজুন" />{search && <button aria-label="সার্চ মুছুন" onClick={() => setSearch('')}><X size={14} /></button>}</div>
-            <div className="toolbar-right">
-              <button className={`filter-toggle ${isFilterOpen ? 'active' : ''}`} onClick={() => setIsFilterOpen((open) => !open)}><SlidersHorizontal size={16} /> ফিল্টার <span>{category === 'সব' ? '' : '1'}</span></button>
-              <label className="sort-select"><span>Sort by</span><select value={sort} onChange={(event) => setSort(event.target.value as SortMode)} aria-label="সাজানোর ধরন"><option value="newest">নতুন আগে</option><option value="popular">জনপ্রিয় আগে</option><option value="name">নাম অনুযায়ী</option></select><ChevronDown size={14} /></label>
-            </div>
-          </div>
-
-          {isFilterOpen && <div className="filter-panel"><div className="filter-panel-label"><Filter size={15} /> CATEGORY</div><div className="category-pills">{categories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item === 'সব' ? 'সব থিম' : categoryMeta[item].label}<span>{item === 'সব' ? themes.length : themes.filter((theme) => theme.category === item).length}</span></button>)}</div></div>}
-
-          <div className="active-filters">
-            <div className="category-pills desktop-pills">{categories.map((item) => <button key={item} className={category === item ? 'selected' : ''} onClick={() => setCategory(item)}>{item === 'সব' ? 'সব থিম' : categoryMeta[item].label}<span>{item === 'সব' ? themes.length : themes.filter((theme) => theme.category === item).length}</span></button>)}</div>
-            <span className="results-copy">{filteredThemes.length}টি থিম দেখানো হচ্ছে</span>
-          </div>
-
-          {filteredThemes.length > 0 ? <div className="theme-grid">{filteredThemes.map((theme, index) => <ThemeCard key={theme.id} theme={theme} index={index} isFavorite={favoriteIds.has(theme.id)} onFavorite={() => toggleFavorite(theme.id)} onPreview={() => setSelectedTheme(theme)} onDownload={() => downloadTheme(theme)} />)}</div> : <div className="empty-state"><div className="empty-icon"><Search size={24} /></div><h3>এই mood-এ এখনও কিছু নেই</h3><p>অন্য শব্দ বা category দিয়ে আবার খুঁজে দেখুন।</p><button className="button button-secondary" onClick={() => { setSearch(''); setCategory('সব'); }}>সব থিম দেখুন</button></div>}
-        </section>
-
-        <section className="how-section" id="how-it-works">
-          <div className="how-heading"><p className="section-kicker">SIMPLE BY DESIGN</p><h2>Desktop সাজানো <span>এতটা সহজ।</span></h2></div>
-          <div className="steps"><div className="step"><span>01</span><Monitor size={19} /><h3>একটি mood বাছুন</h3><p>আপনার কাজ, বিশ্রাম বা রাতজাগার জন্য ঠিক vibe-টা খুঁজে নিন।</p></div><div className="step"><span>02</span><ArrowDownToLine size={19} /><h3>ডাউনলোড করুন</h3><p>একটি ক্লিকেই theme pack আপনার Downloads folder-এ চলে যাবে।</p></div><div className="step"><span>03</span><Zap size={19} /><h3>নিজের মতো করুন</h3><p>আপনার setup-এ apply করুন, share করুন, আর চাইলে নিজেরটা upload করুন।</p></div></div>
-        </section>
-      </main>
-
-      <footer className="site-footer"><div className="footer-brand"><img src="/logo.svg" alt="" className="brand-mark" /><span>green<span>horizon</span></span></div><p>Curated calm for a better desktop.</p><div className="footer-right"><span><Globe2 size={14} /> বাংলা / English</span><span>© 2026 GreenHorizon</span></div></footer>
-
-      {selectedTheme && <ThemeDialog theme={selectedTheme} isFavorite={favoriteIds.has(selectedTheme.id)} onClose={() => setSelectedTheme(null)} onFavorite={() => toggleFavorite(selectedTheme.id)} onDownload={() => downloadTheme(selectedTheme)} />}
-      {isUploadOpen && <UploadDialog onClose={() => setIsUploadOpen(false)} onSubmit={(theme) => { setThemes((current) => [theme, ...current]); setIsUploadOpen(false); showToast('থিম গ্যালারিতে যোগ হয়েছে', `${theme.title} এখন সবার জন্য live।`); }} />}
-      {toast && <div className="toast" role="status"><div className="toast-icon"><Check size={15} /></div><div><strong>{toast.title}</strong><span>{toast.message}</span></div><button aria-label="নোটিফিকেশন বন্ধ করুন" onClick={() => setToast(null)}><X size={15} /></button></div>}
-    </div>
-  );
+    <footer className="site-footer"><div className="footer-brand"><img src="/logo.svg" alt="" className="brand-mark" /><span>green<span>horizon</span></span></div><span>Curated calm for a better desktop.</span><div>© 2026 / built for your screen</div></footer>
+    {selectedTheme && <ThemeDialog theme={selectedTheme} favorite={favorites.has(selectedTheme.id)} onClose={() => setSelectedTheme(null)} onFavorite={() => toggleFavorite(selectedTheme.id)} onDownload={() => downloadTheme(selectedTheme)} />}
+    {uploadOpen && <UploadDialog onClose={() => setUploadOpen(false)} onSubmit={publishTheme} />}
+    {toast && <div className="toast"><div className="toast-check"><Check size={15} /></div><div><b>{toast.title}</b><span>{toast.message}</span></div><button onClick={() => setToast(null)} aria-label="বন্ধ করুন"><X size={15} /></button></div>}
+  </div>;
 }
 
-function ThemeCard({ theme, index, isFavorite, onFavorite, onPreview, onDownload }: { key?: string; theme: Theme; index: number; isFavorite: boolean; onFavorite: () => void; onPreview: () => void; onDownload: () => void }) {
-  return <article className="theme-card" style={{ animationDelay: `${index * 60}ms` }}>
-    <button className="theme-visual" onClick={onPreview} style={{ background: theme.imageUrl ? `linear-gradient(180deg, rgba(11,14,11,.02), rgba(11,14,11,.25)), url(${theme.imageUrl}) center/cover, ${theme.visual}` : theme.visual }} aria-label={`${theme.title} preview দেখুন`}>
-      <span className="visual-topline"><span>GH / {theme.category.toUpperCase()}</span><span>LIVE PREVIEW</span></span>
-      <span className="visual-grain" />
-      <span className="preview-chip">PREVIEW <ArrowUpRight size={13} /></span>
-    </button>
-    <div className="theme-card-body"><div className="card-meta-row"><span className="theme-category" style={{ color: categoryMeta[theme.category].color }}>{categoryMeta[theme.category].label}</span><span>{theme.added}</span></div><button className="theme-title-button" onClick={onPreview}><h3>{theme.title}</h3><ArrowUpRight size={16} /></button><p>{theme.description}</p><div className="tag-row">{theme.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="theme-card-footer"><span className="creator">by <strong>{theme.creator}</strong></span><span className="download-count"><Download size={13} /> {formatDownloads(theme.downloads)}</span><button className={`favorite-button ${isFavorite ? 'is-favorite' : ''}`} onClick={onFavorite} aria-label={isFavorite ? 'পছন্দের তালিকা থেকে সরান' : 'পছন্দের তালিকায় রাখুন'}><Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} /></button><button className="mini-download" onClick={onDownload} aria-label={`${theme.title} ডাউনলোড করুন`}><ArrowDownToLine size={15} /></button></div></div>
-  </article>;
+function CategoryPills({ category, setCategory, themes }: { category: 'সব' | Category; setCategory: (value: 'সব' | Category) => void; themes: Theme[] }) {
+  return <div className="category-pills">{categories.map((item) => <button key={item} className={item === category ? 'selected' : ''} onClick={() => setCategory(item)}>{item === 'সব' ? 'সব' : categoryMeta[item].label}<small>{item === 'সব' ? themes.length : themes.filter((theme) => theme.category === item).length}</small></button>)}</div>;
 }
 
-function ThemeDialog({ theme, isFavorite, onClose, onFavorite, onDownload }: { theme: Theme; isFavorite: boolean; onClose: () => void; onFavorite: () => void; onDownload: () => void }) {
-  return <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="theme-dialog" role="dialog" aria-modal="true" aria-labelledby="dialog-title"><button className="dialog-close" onClick={onClose} aria-label="বন্ধ করুন"><X size={18} /></button><div className="dialog-visual" style={{ background: theme.imageUrl ? `url(${theme.imageUrl}) center/cover, ${theme.visual}` : theme.visual }}><span className="dialog-visual-code">GH / {theme.category.toUpperCase()}</span><span className="dialog-visual-note">DESKTOP THEME</span></div><div className="dialog-content"><div className="card-meta-row"><span className="theme-category" style={{ color: categoryMeta[theme.category].color }}>{categoryMeta[theme.category].label}</span><span>{theme.added} · {formatDownloads(theme.downloads)} downloads</span></div><h2 id="dialog-title">{theme.title}</h2><p>{theme.description}</p><div className="dialog-details"><div><span>CREATOR</span><strong>{theme.creator}</strong></div><div><span>FORMAT</span><strong>4K · 16:9</strong></div><div><span>MOOD</span><strong>{theme.tags.join(' · ')}</strong></div></div><div className="dialog-actions"><button className="button button-primary" onClick={onDownload}><ArrowDownToLine size={16} /> থিম ডাউনলোড করুন</button><button className={`button button-icon-text ${isFavorite ? 'selected' : ''}`} onClick={onFavorite}><Heart size={16} fill={isFavorite ? 'currentColor' : 'none'} /> {isFavorite ? 'সংরক্ষিত' : 'সংরক্ষণ করুন'}</button></div></div></section></div>;
+function HeroIllustration() {
+  return <div className="hero-scene"><div className="scene-orbit orbit-a" /><div className="scene-orbit orbit-b" /><div className="scene-star star-a">✦</div><div className="scene-star star-b">✦</div><div className="scene-label label-top">GH / 001 <span>LIVE PREVIEW</span></div><div className="scene-note"><span>01</span><b>Find your<br />visual rhythm.</b></div><div className="monitor"><div className="monitor-top"><i /><i /><i /></div><div className="monitor-screen"><div className="screen-sun" /><div className="screen-arc arc-one" /><div className="screen-arc arc-two" /><div className="screen-line" /></div><div className="monitor-stand" /></div><div className="scene-pill"><span className="pill-dot" /> soft signal <ArrowUpRight size={14} /></div><div className="scene-label label-bottom">DESKTOP / AESTHETIC PACK</div></div>;
 }
 
-function UploadDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (theme: Theme) => void }) {
-  const [form, setForm] = useState({ title: '', category: 'Aurora' as Category, description: '', creator: '', imageUrl: '', fileUrl: '' });
-  const [error, setError] = useState('');
-  const update = (key: keyof typeof form, value: string) => setForm((current) => ({ ...current, [key]: value }));
-  const submit = (event: FormEvent) => {
-    event.preventDefault();
-    if (!form.title.trim() || !form.description.trim() || !form.creator.trim()) { setError('নাম, description এবং creator name লিখুন।'); return; }
-    const visualByCategory: Record<Category, string> = { Aurora: 'radial-gradient(circle at 70% 30%, #d7ff4f 0 8%, transparent 28%), linear-gradient(135deg, #102015, #40553c 55%, #121912)', Minimal: 'linear-gradient(140deg, #f0ece2, #b9c1ae)', Nature: 'radial-gradient(circle at 38% 20%, #a7d3a6 0 6%, transparent 28%), linear-gradient(135deg, #173127, #0d1612)', Abstract: 'radial-gradient(circle at 64% 36%, #d4b4ff 0 10%, transparent 27%), linear-gradient(145deg, #271d43, #9d568a)', Retro: 'linear-gradient(135deg, #251a44, #d97858)' };
-    onSubmit({ id: `uploaded-${Date.now()}`, title: form.title.trim(), category: form.category, description: form.description.trim(), creator: form.creator.trim(), downloads: 0, added: 'এইমাত্র', tags: ['New', categoryMeta[form.category].label], visual: visualByCategory[form.category], imageUrl: form.imageUrl.trim() || undefined, fileUrl: form.fileUrl.trim() || undefined });
-  };
-  return <div className="dialog-backdrop" role="presentation" onMouseDown={(event) => { if (event.target === event.currentTarget) onClose(); }}><section className="upload-dialog" role="dialog" aria-modal="true" aria-labelledby="upload-title"><div className="upload-head"><div><p className="section-kicker">CREATOR DROP / NEW</p><h2 id="upload-title">আপনার থিম <span>শেয়ার করুন।</span></h2><p>এই MVP-তে submission সঙ্গে সঙ্গে এই browser-এ live হয়।</p></div><button className="dialog-close" onClick={onClose} aria-label="বন্ধ করুন"><X size={18} /></button></div><form onSubmit={submit}><div className="form-grid"><label><span>থিমের নাম *</span><input value={form.title} onChange={(event) => update('title', event.target.value)} placeholder="যেমন: Morning Moss" /></label><label><span>Creator name *</span><input value={form.creator} onChange={(event) => update('creator', event.target.value)} placeholder="আপনার নাম" /></label><label><span>Category</span><select value={form.category} onChange={(event) => update('category', event.target.value as Category)}>{(Object.keys(categoryMeta) as Category[]).map((item) => <option value={item} key={item}>{categoryMeta[item].label}</option>)}</select></label><label><span>Preview image URL <small>(optional)</small></span><input value={form.imageUrl} onChange={(event) => update('imageUrl', event.target.value)} placeholder="https://..." /></label><label className="full-field"><span>Description *</span><textarea value={form.description} onChange={(event) => update('description', event.target.value)} placeholder="এই থিমটা কেমন অনুভূতি দেয়?" rows={3} /></label><label className="full-field"><span>Theme file URL <small>(optional)</small></span><input value={form.fileUrl} onChange={(event) => update('fileUrl', event.target.value)} placeholder="https://...zip" /></label></div>{error && <p className="form-error">{error}</p>}<div className="upload-footer"><span><Check size={14} /> এই browser session-এ live preview</span><button className="button button-primary" type="submit"><Upload size={16} /> গ্যালারিতে প্রকাশ করুন</button></div></form></section></div>;
+function ThemeArtwork({ variant }: { variant: Variant }) {
+  return <div className={`theme-art art-${variant}`}><div className="art-label"><span>GH / {variant.toUpperCase()}</span><span>LIVE PREVIEW</span></div><div className="art-orb orb-one" /><div className="art-orb orb-two" /><div className="art-grid" /><div className="art-wave" /><span className="art-chip">OPEN PREVIEW <ArrowUpRight size={13} /></span></div>;
 }
 
-function formatDownloads(value: number) {
-  return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : String(value);
+function ThemeCard({ theme, index, favorite, onFavorite, onPreview, onDownload }: { key?: string; theme: Theme; index: number; favorite: boolean; onFavorite: () => void; onPreview: () => void; onDownload: () => void }) {
+  return <article className="theme-card" style={{ animationDelay: `${index * 70}ms` }}><button className="theme-art-button" onClick={onPreview} aria-label={`${theme.title} preview দেখুন`}><ThemeArtwork variant={theme.variant} /></button><div className="theme-info"><div className="meta"><span className="category-label" style={{ color: categoryMeta[theme.category].color }}>{categoryMeta[theme.category].label}</span><span>{theme.added}</span></div><button className="title-button" onClick={onPreview}><h3>{theme.title}</h3><ArrowUpRight size={16} /></button><p>{theme.description}</p><div className="tags">{theme.tags.map((tag) => <span key={tag}>{tag}</span>)}</div><div className="card-footer"><span className="byline">by <b>{theme.creator}</b></span><span className="downloads"><Download size={13} /> {formatDownloads(theme.downloads)}</span><button className={`favorite ${favorite ? 'saved' : ''}`} onClick={onFavorite} aria-label="পছন্দের তালিকায় রাখুন"><Heart size={16} fill={favorite ? 'currentColor' : 'none'} /></button><button className="download-mini" onClick={onDownload} aria-label={`${theme.title} download`}><ArrowDownToLine size={15} /></button></div></div></article>;
 }
+
+function ThemeDialog({ theme, favorite, onClose, onFavorite, onDownload }: { theme: Theme; favorite: boolean; onClose: () => void; onFavorite: () => void; onDownload: () => void }) {
+  return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}><section className="theme-dialog" role="dialog" aria-modal="true"><button className="modal-close" onClick={onClose} aria-label="বন্ধ করুন"><X size={18} /></button><ThemeArtwork variant={theme.variant} /><div className="dialog-info"><div className="meta"><span className="category-label" style={{ color: categoryMeta[theme.category].color }}>{categoryMeta[theme.category].label}</span><span>{theme.added} · {formatDownloads(theme.downloads)} downloads</span></div><h2>{theme.title}</h2><p>{theme.description}</p><div className="dialog-specs"><div><small>CREATOR</small><b>{theme.creator}</b></div><div><small>PACK FILE</small><b>{theme.fileName || 'curated-theme-pack'}</b></div><div><small>FORMAT</small><b>4K · 16:9</b></div></div><div className="dialog-actions"><button className="button primary" onClick={onDownload}><ArrowDownToLine size={16} /> {theme.fileName ? 'ফাইল ডাউনলোড করুন' : 'প্যাক ডাউনলোড করুন'}</button><button className={`button outline ${favorite ? 'selected' : ''}`} onClick={onFavorite}><Heart size={16} fill={favorite ? 'currentColor' : 'none'} /> {favorite ? 'সংরক্ষিত' : 'সংরক্ষণ'}</button></div></div></section></div>;
+}
+
+function UploadDialog({ onClose, onSubmit }: { onClose: () => void; onSubmit: (theme: Omit<Theme, 'id' | 'downloads' | 'added'>) => void }) {
+  const [form, setForm] = useState({ title: '', creator: '', category: 'Aurora' as Category, description: '', file: null as File | null });
+  const [dragging, setDragging] = useState(false); const [error, setError] = useState('');
+  const chooseFile = (file?: File) => { if (!file) return; if (file.size > 200 * 1024 * 1024) { setError('ফাইল 200MB-এর মধ্যে রাখুন।'); return; } setForm((current) => ({ ...current, file })); setError(''); };
+  const onFileChange = (e: ChangeEvent<HTMLInputElement>) => chooseFile(e.target.files?.[0]);
+  const onDrop = (e: DragEvent<HTMLLabelElement>) => { e.preventDefault(); setDragging(false); chooseFile(e.dataTransfer.files?.[0]); };
+  const submit = (e: FormEvent) => { e.preventDefault(); if (!form.title.trim() || !form.creator.trim() || !form.description.trim() || !form.file) { setError('নাম, creator, description এবং theme-pack file দিন।'); return; } onSubmit({ title: form.title.trim(), creator: form.creator.trim(), category: form.category, description: form.description.trim(), tags: ['New', categoryMeta[form.category].label], variant: form.category === 'Aurora' ? 'lime' : form.category === 'Minimal' ? 'blue' : form.category === 'Nature' ? 'mint' : form.category === 'Abstract' ? 'violet' : 'coral', fileName: form.file.name, fileBlobUrl: URL.createObjectURL(form.file) }); };
+  return <div className="modal-backdrop" onMouseDown={(e) => { if (e.target === e.currentTarget) onClose(); }}><section className="upload-dialog" role="dialog" aria-modal="true"><div className="upload-heading"><div><p className="kicker">CREATOR DROP / DIRECT UPLOAD</p><h2>আপনার pack <em>শেয়ার করুন।</em></h2><p>ফাইলটা সরাসরি বেছে নিন—কোনো URL paste করার দরকার নেই।</p></div><button className="modal-close" onClick={onClose} aria-label="বন্ধ করুন"><X size={18} /></button></div><form onSubmit={submit}><div className="form-fields"><label><span>থিমের নাম *</span><input value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="যেমন: Morning Moss" /></label><label><span>Creator name *</span><input value={form.creator} onChange={(e) => setForm({ ...form, creator: e.target.value })} placeholder="আপনার নাম" /></label><label><span>Category</span><select value={form.category} onChange={(e) => setForm({ ...form, category: e.target.value as Category })}>{(Object.keys(categoryMeta) as Category[]).map((item) => <option key={item} value={item}>{categoryMeta[item].label}</option>)}</select></label><label className="wide"><span>Description *</span><textarea value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="এই pack-টা কেমন feeling দেয়?" rows={3} /></label><label className={`dropzone wide ${dragging ? 'dragging' : ''}`} onDragOver={(e) => { e.preventDefault(); setDragging(true); }} onDragLeave={() => setDragging(false)} onDrop={onDrop}><input type="file" accept={acceptedTypes} onChange={onFileChange} /><span className="drop-icon"><FileArchive size={25} /></span><strong>{form.file ? form.file.name : 'থিমপ্যাক ফাইল এখানে drop করুন'}</strong><small>{form.file ? formatFileSize(form.file.size) : 'অথবা ক্লিক করে বেছে নিন · .zip · .rar · .7z · .theme · max 200MB'}</small><em><Upload size={14} /> browse files</em></label></div>{error && <p className="form-error">{error}</p>}<div className="upload-submit"><span><FileCheck2 size={15} /> সরাসরি browser থেকে file pack নেওয়া হবে</span><button className="button primary" type="submit"><Upload size={16} /> গ্যালারিতে publish করুন</button></div></form></section></div>;
+}
+
+function ProcessStep({ number, icon, title, text }: { number: string; icon: ReactNode; title: string; text: string }) { return <div className="process-step"><span>{number}</span>{icon}<h3>{title}</h3><p>{text}</p></div>; }
+function formatDownloads(value: number) { return value >= 1000 ? `${(value / 1000).toFixed(value >= 10000 ? 0 : 1)}k` : String(value); }
+function formatFileSize(value: number) { return value > 1024 * 1024 ? `${(value / (1024 * 1024)).toFixed(1)} MB` : `${Math.ceil(value / 1024)} KB`; }
 
 export default App;
