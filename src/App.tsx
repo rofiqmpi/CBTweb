@@ -81,7 +81,7 @@ function App() {
   return <div className="app-shell" id="top">
     <header className="site-header">
       <a className="brand" href="#top"><img src="/logo.svg" alt="" className="brand-mark" /><span>green<span>horizon</span></span></a>
-      <nav className={`main-nav ${menuOpen ? 'open' : ''}`}><a href="#archive" onClick={() => setMenuOpen(false)}>থিমপ্যাক গ্যালারি</a><a href="#process" onClick={() => setMenuOpen(false)}>কীভাবে কাজ করে</a><button className="nav-upload" onClick={() => { setUploadOpen(true); setMenuOpen(false); }}><Plus size={15} /> থিমপ্যাক আপলোড</button></nav>
+      <nav className={`main-nav ${menuOpen ? 'open' : ''}`}><a href="#archive" onClick={() => setMenuOpen(false)}>থিমপ্যাক গ্যালারি</a><a href="#studio" onClick={() => setMenuOpen(false)}>ভিজ্যুয়াল স্টুডিও</a><button className="nav-upload" onClick={() => { setUploadOpen(true); setMenuOpen(false); }}><Plus size={15} /> থিমপ্যাক আপলোড</button></nav>
       <div className="header-right"><span className="live-badge"><i /> CURATED DAILY</span><button className="menu-toggle" onClick={() => setMenuOpen((v) => !v)} aria-label="মেনু"><Menu size={19} /></button></div>
     </header>
 
@@ -101,6 +101,8 @@ function App() {
         {filteredThemes.length ? <div className="theme-grid">{filteredThemes.map((theme, index) => <ThemeCard key={theme.id} theme={theme} index={index} favorite={favorites.has(theme.id)} onFavorite={() => toggleFavorite(theme.id)} onPreview={() => setSelectedTheme(theme)} onDownload={() => downloadTheme(theme)} />)}</div> : <div className="empty"><Search size={24} /><h3>এই mood-এ কিছু পাওয়া যায়নি</h3><p>অন্য keyword বা category দিয়ে চেষ্টা করুন।</p><button className="button outline" onClick={() => { setSearch(''); setCategory('সব'); }}>সব pack দেখুন</button></div>}
       </section>
 
+      <IllustrationShowcase />
+
       <section className="process" id="process"><div className="section-top"><div><p className="kicker">FROM IDEA TO DESKTOP</p><h2>আপনার pack.<br /><em>আপনার pace.</em></h2></div><p>কোনো complicated setup নয়। তিনটি ছোট step, তারপর আপনার screen একদম অন্যরকম।</p></div><div className="process-grid"><ProcessStep number="01" icon={<Search size={19} />} title="একটি mood বাছুন" text="Curated gallery থেকে আপনার vibe-এর pack খুঁজুন।" /><ProcessStep number="02" icon={<Download size={19} />} title="এক ক্লিকে download" text="Theme pack সরাসরি আপনার Downloads-এ চলে যাবে।" /><ProcessStep number="03" icon={<Upload size={19} />} title="নিজেরটা upload" text=".zip, .rar, .7z বা .theme pack সরাসরি শেয়ার করুন।" /></div></section>
     </main>
 
@@ -117,6 +119,14 @@ function CategoryPills({ category, setCategory, themes }: { category: 'সব' |
 
 function HeroIllustration() {
   return <div className="hero-scene"><div className="scene-orbit orbit-a" /><div className="scene-orbit orbit-b" /><div className="scene-star star-a">✦</div><div className="scene-star star-b">✦</div><div className="scene-label label-top">GH / 001 <span>LIVE PREVIEW</span></div><div className="scene-note"><span>01</span><b>Find your<br />visual rhythm.</b></div><div className="monitor"><div className="monitor-top"><i /><i /><i /></div><div className="monitor-screen"><div className="screen-sun" /><div className="screen-arc arc-one" /><div className="screen-arc arc-two" /><div className="screen-line" /></div><div className="monitor-stand" /></div><div className="scene-pill"><span className="pill-dot" /> soft signal <ArrowUpRight size={14} /></div><div className="scene-label label-bottom">DESKTOP / AESTHETIC PACK</div></div>;
+}
+
+function IllustrationShowcase() {
+  return <section className="illustration-showcase" id="studio"><div className="showcase-intro"><p className="kicker">THE GREENHORIZON VISUAL LANGUAGE</p><h2>Not just a theme.<br /><em>A whole feeling.</em></h2><p>প্রতিটি mood-এর পেছনে আছে আলাদা একটা ছোট universe—যেটা আপনার screen-কে শুধু সুন্দর নয়, নিজের মতো করে তোলে।</p><button className="button outline" onClick={() => document.getElementById('archive')?.scrollIntoView({ behavior: 'smooth' })}>illustrated packs দেখুন <ArrowUpRight size={16} /></button></div><div className="illustration-rail"><ArtPanel kind="focus" number="01" eyebrow="FOCUS MODE" title="চোখ রাখুন কাজে" /><ArtPanel kind="mood" number="02" eyebrow="MOOD SHIFT" title="আলো বদলান" /><ArtPanel kind="create" number="03" eyebrow="CREATOR MODE" title="নিজেরটা বানান" /></div></section>;
+}
+
+function ArtPanel({ kind, number, eyebrow, title }: { kind: 'focus' | 'mood' | 'create'; number: string; eyebrow: string; title: string }) {
+  return <article className={`art-panel art-panel-${kind}`}><div className="art-panel-top"><span>{number}</span><span>{eyebrow}</span></div><div className="art-panel-canvas"><div className="panel-ring ring-one" /><div className="panel-ring ring-two" /><svg viewBox="0 0 220 170" aria-hidden="true">{kind === 'focus' && <><path className="focus-line" d="M24 117C53 61 92 52 112 96c16 35 36 37 84-25" /><circle className="focus-orb" cx="112" cy="95" r="22" /><circle className="focus-core" cx="112" cy="95" r="7" /><path className="focus-star" d="M49 39l4 9 9 4-9 4-4 9-4-9-9-4 9-4 4-9z" /></>}{kind === 'mood' && <><path className="mood-arc" d="M28 133C45 55 122 34 192 71" /><circle className="mood-sun" cx="121" cy="78" r="30" /><path className="mood-ray" d="M121 30v-13M121 139v-13M73 78H60M182 78h-13" /><circle className="mood-dot dot-a" cx="48" cy="61" r="4" /><circle className="mood-dot dot-b" cx="170" cy="120" r="6" /></>}{kind === 'create' && <><rect className="file-body" x="67" y="31" width="82" height="105" rx="9" /><path className="file-fold" d="M123 31v27h26" /><path className="file-mark" d="M89 85h39M89 101h24" /><circle className="create-plus" cx="57" cy="120" r="20" /><path className="create-cross" d="M57 111v18M48 120h18" /><path className="create-star" d="M174 37l4 9 9 4-9 4-4 9-4-9-9-4 9-4 4-9z" /></>}</svg></div><div className="art-panel-bottom"><span>{title}</span><ArrowUpRight size={17} /></div></article>;
 }
 
 function ThemeArtwork({ variant }: { variant: Variant }) {
